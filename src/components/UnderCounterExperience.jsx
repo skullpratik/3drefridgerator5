@@ -411,8 +411,8 @@ export const Experience = forwardRef(({ lighting = "photo_studio_01_1k.hdr", doo
         <ContactShadows
           position={[0, -0.9, 0]}
           opacity={1}
-          scale={18}
-          far={25}
+          scale={25}
+          far={35}
           blur={1.5}
           resolution={512}
         />

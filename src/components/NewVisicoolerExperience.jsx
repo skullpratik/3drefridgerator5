@@ -297,8 +297,25 @@ const setUserTextureParams = (t, gl) => {
 
   // Apply uploaded texture to Insidestrip1...6 meshes
   useEffect(() => {
-    if (!scene || !insideStripTexture) return;
-
+    if (!scene) return;
+    if (!insideStripTexture) {
+      // Remove texture from InsideStrip meshes, do not restore any material
+      scene.traverse((obj) => {
+        if (obj.isMesh && obj.name) {
+          const lower = obj.name.toLowerCase();
+          for (let i = 1; i <= 6; i++) {
+            if (lower === `insidestrip${i}` && obj.material) {
+              if (obj.material.map && obj.material.map.dispose) {
+                obj.material.map.dispose();
+              }
+              obj.material.map = null;
+              obj.material.needsUpdate = true;
+            }
+          }
+        }
+      });
+      return;
+    }
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -339,7 +356,19 @@ const setUserTextureParams = (t, gl) => {
 
   // --- SidepannelLeft Texture Update ---
   useEffect(() => {
-    if (!scene || !sidePanelLeftTexture) return;
+    if (!scene) return;
+    if (!sidePanelLeftTexture) {
+      // Restore FridgeColor material if texture is removed
+      scene.traverse((obj) => {
+        if (obj.isMesh && obj.name && obj.name.toLowerCase() === 'sidepannelleft') {
+          obj.material = new THREE.MeshStandardMaterial();
+          obj.material.name = 'FridgeColor';
+          obj.material.color = new THREE.Color(fridgeColor || '#ffffff');
+          obj.material.needsUpdate = true;
+        }
+      });
+      return;
+    }
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -378,11 +407,23 @@ const setUserTextureParams = (t, gl) => {
       console.error('❌ Failed to load SidepannelLeft image', err);
     };
     img.src = sidePanelLeftTexture;
-  }, [scene, sidePanelLeftTexture, gl]);
+  }, [scene, sidePanelLeftTexture, gl, fridgeColor]);
 
   // --- SidepannelRight Texture Update ---
   useEffect(() => {
-    if (!scene || !sidePanelRightTexture) return;
+    if (!scene) return;
+    if (!sidePanelRightTexture) {
+      // Restore FridgeColor material if texture is removed
+      scene.traverse((obj) => {
+        if (obj.isMesh && obj.name && obj.name.toLowerCase() === 'sidepannelright') {
+          obj.material = new THREE.MeshStandardMaterial();
+          obj.material.name = 'FridgeColor';
+          obj.material.color = new THREE.Color(fridgeColor || '#ffffff');
+          obj.material.needsUpdate = true;
+        }
+      });
+      return;
+    }
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -421,7 +462,7 @@ const setUserTextureParams = (t, gl) => {
       console.error('❌ Failed to load SidepannelRight image', err);
     };
     img.src = sidePanelRightTexture;
-  }, [scene, sidePanelRightTexture, gl]);
+  }, [scene, sidePanelRightTexture, gl, fridgeColor]);
 
   // cleanup textures/geometries when unmounting
   useEffect(() => {

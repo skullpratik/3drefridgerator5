@@ -162,6 +162,7 @@ export const Experience = forwardRef(function DeepFridgeExperience(
         target={[0, 0.5, 0]}
         makeDefault
       />
+      
 
       {/* ✅ Model */}
       {scene && <primitive object={scene} />}
