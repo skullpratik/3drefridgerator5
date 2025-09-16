@@ -4,9 +4,7 @@ import { Environment, ContactShadows, OrbitControls, useGLTF } from "@react-thre
 import * as THREE from "three";
 import gsap from "gsap";
 
-// Postprocessing
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
+// ...existing code...
 
 useGLTF.preload("/models/deepfreezer.glb");
 
@@ -168,15 +166,7 @@ export const Experience = forwardRef(function DeepFridgeExperience(
       {/* ✅ Model */}
       {scene && <primitive object={scene} />}
 
-      {/* ✅ Postprocessing */}
-      <EffectComposer multisampling={0}> 
-        <Bloom
-          intensity={0.1}     // glow strength
-          luminanceThreshold={0.85}
-          luminanceSmoothing={0.3}
-          blendFunction={BlendFunction.SCREEN}
-        />
-      </EffectComposer>
+      {/* Postprocessing removed */}
     </Suspense>
   );
 });

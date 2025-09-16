@@ -5,10 +5,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { AccumulativeShadows, RandomizedLight } from "@react-three/drei";
 
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
-import { EffectComposer, Bloom, SMAA, ToneMapping } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
+// ...existing code...
 
 // Drawers
 const TARGET_GROUPS = [
@@ -423,7 +420,7 @@ export const Experience = forwardRef(({ lighting = "photo_studio_01_1k.hdr", doo
         <Environment files={lighting} background={false} />
         {scene && <primitive object={scene} />}
         {/* AccumulativeShadows for realistic soft shadows (optional, can be removed if not needed) */}
-        {/* 🔥 Postprocessing Effects */}
+  {/* Postprocessing removed */}
       </Suspense>
     </>
   );
