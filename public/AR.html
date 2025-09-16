@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
+            color: #2d3748;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            position: relative;
+        }
+        
+        header {
+            background: #2a9d8f;
+            color: white;
+            padding: 28px;
+            text-align: center;
+            border-bottom: 1px solid #268d80;
+            position: relative;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .close-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .content {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .model-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            background: #f1faee;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .model-icon {
+            font-size: 2.5rem;
+            margin-right: 20px;
+        }
+        
+        .model-text {
+            text-align: left;
+        }
+        
+        .model-name {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .model-description {
+            font-size: 1rem;
+            color: #718096;
+            margin-top: 6px;
+        }
+        
+        .main-section {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .qr-section {
+            text-align: center;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .qr-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #2a9d8f;
+            font-weight: 600;
+        }
+        
+        #qrcode {
+            margin: 20px auto;
+            padding: 10px;
+            background: #ffffff;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            min-height: 220px;
+            min-width: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #qrcode canvas {
+            border-radius: 8px;
+        }
+        
+        .loading {
+            color: #2a9d8f;
+            font-size: 1.1rem;
+        }
+
+        .share-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            padding-top: 0;
+            margin-top: 0;
+            border-top: none;
+        }
+        
+        .share-text {
+            font-size: 1rem;
+            color: #718096;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .share-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        
+        .share-button {
+            padding: 12px 20px;
+            background: #e0f2f7;
+            border: 1px solid #b2ebf2;
+            border-radius: 10px;
+            color: #2a9d8f;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            width: 100%;
+        }
+        
+        .share-button:hover {
+            background: #b2ebf2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .copied-message {
+            color: #38a169;
+            font-size: 0.95rem;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .action-buttons, .instructions {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #f1faee;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .main-section {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .model-name {
+                font-size: 1.4rem;
+            }
+            .content {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="close-btn" id="closeBtn">✖</button>
+            <h1>AR Viewer</h1>
+            <p class="subtitle">Experience products in Augmented Reality</p>
+        </header>
+        
+        <div class="content">
+            <div class="model-info">
+                <div class="model-icon" id="modelIcon">🧊</div>
+                <div class="model-text">
+                    <div class="model-name" id="modelName">Deep Freezer</div>
+                    <div class="model-description" id="modelDescription">View in augmented reality</div>
+                </div>
+            </div>
+
+            <div class="main-section">
+                <div class="qr-section">
+                    <h2 class="qr-title">Scan for AR Experience</h2>
+                    <div id="qrcode">
+                        <p class="loading">Generating QR code...</p>
+                    </div>
+                </div>
+                
+                <div class="share-section">
+                    <p class="share-text">Share this AR experience</p>
+                    <div class="share-buttons">
+                        <button class="share-button" id="copyLinkBtn">Copy AR Link</button>
+                        <button class="share-button" id="shareBtn">Share</button>
+                    </div>
+                    <p id="copiedMessage" class="copied-message">AR link copied to clipboard!</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="#" id="directLink" class="action-button primary-button">View in AR on this device</a>
+            </div>
+            
+            <div class="instructions">
+                <h3>How to view in AR</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <p>Scan the QR code with your Android device</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <p>Tap the link that appears</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <p>View the product in your space</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2025 Tikitech | For Android AR experiences</p>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const qrcodeElement = document.getElementById('qrcode');
+        const directLinkElement = document.getElementById('directLink');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const copiedMessage = document.getElementById('copiedMessage');
+        const modelNameElement = document.getElementById('modelName');
+        const modelDescriptionElement = document.getElementById('modelDescription');
+        const modelIconElement = document.getElementById('modelIcon');
+        const closeBtn = document.getElementById('closeBtn');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const model = urlParams.get('model') || 'deepfreezer';
+        
+        const models = {
+            visicooler: {
+                glb: "/assets/visicooler.glb",
+                title: "Visicooler",
+                description: "View in augmented reality",
+                icon: "❄️"
+            },
+            deepfreezer: {
+                glb: "/assets/deepfreezer.glb",
+                title: "Deep Freezer",
+                description: "View in augmented reality",
+                icon: "🧊"
+            }
+        };
+        
+        const selectedModel = models[model] || models.deepfreezer;
+        modelNameElement.textContent = selectedModel.title;
+        modelDescriptionElement.textContent = selectedModel.description;
+        modelIconElement.textContent = selectedModel.icon;
+        
+        // Create the AR URL
+        const absoluteGlbUrl = `${window.location.origin}${selectedModel.glb}`;
+        const sceneViewerUrl = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(absoluteGlbUrl)}&mode=ar_only&title=${encodeURIComponent(selectedModel.title)}`;
+        
+        function generateQRCode() {
+            qrcodeElement.innerHTML = '';
+            
+            try {
+                const canvas = document.createElement('canvas');
+                QRCode.toCanvas(canvas, sceneViewerUrl, {
+                    width: 220,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                }, function(error) {
+                    if (error) {
+                        console.error(error);
+                        qrcodeElement.innerHTML = '<p class="loading">Failed to generate QR code</p>';
+                        return;
+                    }
+                    qrcodeElement.appendChild(canvas);
+                });
+            } catch (error) {
+                console.error("QR code generation error:", error);
+                qrcodeElement.innerHTML = '<p class="loading">Failed to generate QR code</p>';
+            }
+            
+            directLinkElement.href = sceneViewerUrl;
+        }
+        
+        generateQRCode();
+        
+        // Direct link event listener
+        directLinkElement.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                window.location.href = this.href;
+            } else {
+                alert('Please use an Android mobile device to view AR content');
+            }
+        });
+        
+        // Copy AR link functionality
+        copyLinkBtn.addEventListener('click', function() {
+            navigator.clipboard.writeText(sceneViewerUrl).then(function() {
+                copiedMessage.style.display = 'block';
+                setTimeout(() => {
+                    copiedMessage.style.display = 'none';
+                }, 2000);
+            }).catch(function() {
+                alert('Failed to copy AR link');
+            });
+        });
+        
+        // Web Share API for sharing the direct AR link
+        shareBtn.addEventListener('click', function() {
+            if (navigator.share) {
+                navigator.share({
+                    title: `View ${selectedModel.title} in AR`,
+                    text: `Check out this ${selectedModel.title} in augmented reality`,
+                    url: sceneViewerUrl
+                }).catch(function() {
+                    // Fallback to copying the link if sharing fails
+                    navigator.clipboard.writeText(sceneViewerUrl).then(function() {
+                        copiedMessage.style.display = 'block';
+                        setTimeout(() => {
+                            copiedMessage.style.display = 'none';
+                        }, 2000);
+                    });
+                });
+            } else {
+                // Fallback for browsers that don't support the Web Share API
+                navigator.clipboard.writeText(sceneViewerUrl).then(function() {
+                    copiedMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copiedMessage.style.display = 'none';
+                    }, 2000);
+                }).catch(function() {
+                    alert('Sharing not supported on this browser');
+                });
+            }
+        });
+
+        // Close button functionality
+        closeBtn.addEventListener('click', function() {
+            window.history.back();
+        });
+    });
+    </script>
+</body>
+</html>

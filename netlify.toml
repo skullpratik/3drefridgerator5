@@ -1,0 +1,43 @@
+[build]
+  base = "."
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "max-age=31536000"
+
+[[headers]]
+  for = "/models/*"
+  [headers.values]
+    Cache-Control = "max-age=31536000"
+
+[[headers]]
+  for = "/texture/*"
+  [headers.values]
+    Cache-Control = "max-age=31536000"
+
+[[headers]]
+  for = "/*.glb"
+  [headers.values]
+    Cache-Control = "max-age=31536000"
+    Content-Type = "model/gltf-binary"
+
+[[headers]]
+  for = "/*.hdr"
+  [headers.values]
+    Cache-Control = "max-age=31536000"
+
+[[headers]]
+  for = "/*.exr"
+  [headers.values]
+    Cache-Control = "max-age=31536000"

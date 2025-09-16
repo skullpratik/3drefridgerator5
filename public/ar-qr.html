@@ -1,0 +1,64 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AR Redirect</title>
+  <script>
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const glbParam = urlParams.get("glb");
+    const usdzParam = urlParams.get("usdz");
+
+    let glbUrl = glbParam;
+    let usdzUrl = usdzParam || "";
+
+    // If no dynamic URL provided, you can still support predefined ones
+    if (!glbUrl) {
+      const models = {
+        visicooler: {
+          glb: "/visicooler.glb",
+          //usdz: "https://3d.tikitech.in/uv.usdz",
+        },
+        deepfreezer: {
+          glb: "/deepfreezer.glb",
+          //usdz: "https://3d.tikitech.in/deepfreezer.usdz",
+        }
+      };
+
+      const modelType = urlParams.get("model");
+      if (modelType && models[modelType]) {
+        glbUrl = models[modelType].glb;
+        usdzUrl = models[modelType].usdz;
+      }
+    }
+
+    if (!glbUrl) {
+      document.body.innerHTML = "<h1>Error: No GLB URL provided.</h1>";
+      throw new Error("No model provided");
+    }
+
+    // Detect device
+    const ua = navigator.userAgent || "";
+    if (/iPad|iPhone|iPod/.test(ua)) {
+      // iOS Quick Look
+      if (usdzUrl) {
+        window.location.href = usdzUrl;
+      } else {
+        document.body.innerHTML = "<h1>No USDZ provided for iOS.</h1>";
+      }
+    } else if (/Android/.test(ua)) {
+      // Android Scene Viewer
+      const sceneUrl = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred`;
+      window.location.href = sceneUrl;
+    } else {
+      // Desktop fallback
+      document.body.innerHTML = "<h1>Scan this page on your phone to view in AR</h1><p>GLB: " + glbUrl + "</p>";
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting to AR...</p>
+</body>
+</html>
