@@ -225,13 +225,13 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
             tex.center.set(0.5, 0.5);
             tex.offset.set(0, 0);
             tex.rotation = 0;
-            tex.repeat.set(Math.abs(tex.repeat.x || 1), Math.abs(tex.repeat.y || 1));
+             tex.repeat.set(1.84,1.01);
             tex.needsUpdate = true;
 
             child.material.map = tex;
             child.material.emissiveMap = tex;
             child.material.emissive = new THREE.Color(0xffffff);
-            child.material.emissiveIntensity = 1.2;
+            child.material.emissiveIntensity = 1;
             // ensure both sides show (handles inverted normals)
             child.material.side = THREE.DoubleSide;
             child.material.needsUpdate = true;
@@ -273,7 +273,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       if (typeof mat.emissiveIntensity !== 'number') mat.emissiveIntensity = 0;
 
       const tween = gsap.to(mat, {
-        emissiveIntensity: mat.emissiveIntensity > 0 ? Math.max(mat.emissiveIntensity, 2.5) : 2.5,
+        emissiveIntensity: mat.emissiveIntensity > 0 ? Math.max(mat.emissiveIntensity, 2) : 2.5,
         duration: 1.2,
         repeat: -1,
         yoyo: true,

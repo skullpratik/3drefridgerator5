@@ -59,6 +59,7 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
   const [pendingSidePanelLeft, setPendingSidePanelLeft] = useState(null);
   const [pendingSidePanelRight, setPendingSidePanelRight] = useState(null);
   const [pendingPepsi, setPendingPepsi] = useState(null);
+  const [logoUploadError, setLogoUploadError] = useState(null);
 
   // Handlers for color pickers
   const handleColorPickerOpen = (type, event) => {
@@ -188,7 +189,7 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
                   {pendingPepsi ? (
                     <Box sx={{ position: 'relative', mb: 1, width: '100%', flexGrow: 1 }}>
                       <Box component="img" src={pendingPepsi} sx={{ width: '100%', height: '100%', maxHeight: '50px', objectFit: 'contain', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="Pepsi Logo preview" />
-                      <IconButton size="small" onClick={() => { setPendingPepsi(null); if (onPepsiTextureUpload) onPepsiTextureUpload(null); }} sx={{ position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 16, height: 16 }}>
+                      <IconButton size="small" onClick={() => { setPendingPepsi(null); setLogoUploadError(null); if (onPepsiTextureUpload) onPepsiTextureUpload(null); }} sx={{ position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 16, height: 16 }}>
                         <CloseIcon fontSize="small" />
                       </IconButton>
                     </Box>
@@ -196,15 +197,52 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
                     <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
                       <SmallButton variant="outlined" component="label" fullWidth startIcon={<CloudUploadIcon sx={{ fontSize: '0.9rem' }} />} sx={{ backgroundColor: "#f7f9fc", border: "1px dashed #ccc", "&:hover": { border: "1px dashed #007bff", backgroundColor: "#e3f2fd" }, borderRadius: 0.5, py: 1 }}>
                         Upload
-                        <input type="file" hidden accept="image/*" onChange={e => { const file = e.target.files && e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { setPendingPepsi(ev.target.result); }; reader.readAsDataURL(file); }} />
+                        <input type="file" hidden accept="image/*" onChange={e => {
+                          const file = e.target.files && e.target.files[0];
+                          if (!file) return;
+
+                          // Clear any previous error
+                          setLogoUploadError(null);
+
+                          // Validate image dimensions
+                          const img = new Image();
+                          img.onload = () => {
+                            if (img.width !== img.height) {
+                              setLogoUploadError(`Image must be square (1:1 ratio). Current: ${img.width}x${img.height}`);
+                              // Clear the file input
+                              e.target.value = '';
+                              return;
+                            }
+
+                            // If validation passes, proceed with upload
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setPendingPepsi(ev.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                          };
+                          img.onerror = () => {
+                            setLogoUploadError('Invalid image file');
+                            e.target.value = '';
+                          };
+                          img.src = URL.createObjectURL(file);
+                        }} />
                       </SmallButton>
                     </Box>
+                  )}
+                  {logoUploadError && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, fontSize: '0.65rem', textAlign: 'center' }}>
+                      {logoUploadError}
+                    </Typography>
                   )}
                   <SmallButton
                     variant="contained"
                     disabled={!pendingPepsi}
                     onClick={() => {
-                      if (pendingPepsi && onPepsiTextureUpload) onPepsiTextureUpload(pendingPepsi);
+                      if (pendingPepsi && onPepsiTextureUpload) {
+                        onPepsiTextureUpload(pendingPepsi);
+                        setLogoUploadError(null); // Clear error on successful apply
+                      }
                     }}
                     sx={{ mt: 1, fontSize: '0.7rem', padding: '2px 6px' }}
                   >Apply</SmallButton>
