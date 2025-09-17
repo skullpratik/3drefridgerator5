@@ -220,6 +220,7 @@ export const Experience = forwardRef(({
         if ('colorSpace' in tex) tex.colorSpace = THREE.SRGBColorSpace;
         else tex.encoding = THREE.sRGBEncoding;
         tex.flipY = false;
+  tex.anisotropy = 16;
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
         tex.center.set(0.5, 0.5);
         tex.offset.set(0, 0);
@@ -240,11 +241,14 @@ export const Experience = forwardRef(({
             // Apply Pepsi image as base map ONLY
             child.material.map = tex;
 
-            // IMPORTANT: do NOT set emissiveMap to the same tex.
-            // We'll use a separate emissive color and animate emissiveIntensity.
-            child.material.emissiveMap = null;
-            // Choose a subtle default emissive color (we'll animate intensity later).
-            child.material.emissive = new THREE.Color(0xffffff); // white glow color for logo
+            // Use the same texture as emissiveMap so the logo glows in its own colors.
+            // Keep intensity low and animate emissiveIntensity to brighten without washing.
+            child.material.emissiveMap = tex;
+            // Choose emissive color white so emissiveMap colors are shown unmodified
+            child.material.emissive = new THREE.Color(0xffffff);
+            // Reduce specular highlight to avoid 'washed' look but keep it slightly visible
+            child.material.metalness = 0.0;
+            child.material.roughness = 0.4;
             child.material.emissiveIntensity = 0; // start with no glow
             child.material.side = THREE.DoubleSide;
             child.material.needsUpdate = true;
@@ -319,7 +323,7 @@ export const Experience = forwardRef(({
       const tl = gsap.timeline({ repeat: -1, repeatDelay: 0, delay: idx * 0.12 });
       // pulse from 0 -> peak -> 0, then hold a little
       tl.to(mat, {
-        emissiveIntensity: 0.25, // reduced peak glow for subtle effect
+        emissiveIntensity: 1.5, // increased peak for a stronger visible glow
         duration: 0.9,
         ease: 'sine.inOut',
         onUpdate: () => mat && (mat.needsUpdate = true)
