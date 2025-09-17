@@ -4,12 +4,12 @@ import { Environment, ContactShadows, OrbitControls, useGLTF } from '@react-thre
 import * as THREE from 'three';
 import gsap from 'gsap';
 
-useGLTF.preload('/models/NewVisicooler.glb');
+useGLTF.preload('/models/NewVisicooler2.glb');
 
 
-export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', position = [0, -0.8, 0], scale = 1.0, onAssetLoaded, doorAxis = 'x', glowColor = '#fff700', insideStripTexture = null, fridgeColor = '#ffffff', handleColor = '#ffffff', sidePanelLeftTexture = null, sidePanelRightTexture = null }, ref) => {
+export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', position = [0, -0.8, 0], scale = 1.0, onAssetLoaded, doorAxis = 'x', glowColor = '#fff700', insideStripTexture = null, fridgeColor = '#ffffff', handleColor = '#ffffff', sidePanelLeftTexture = null, sidePanelRightTexture = null, pepsiTexture = null, debugUV = false }, ref) => {
   const { scene: threeScene, camera, gl } = useThree();
-  const { scene: originalScene } = useGLTF('/models/NewVisicooler.glb');
+  const { scene: originalScene } = useGLTF('/models/NewVisicooler2.glb');
   // clone to avoid reuse issues
   const [scene] = React.useState(() => originalScene ? originalScene.clone(true) : null);
 
@@ -58,14 +58,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
 
   // --- InsideStrip Texture Update ---
   // --- Debug: Log all mesh names ---
-useEffect(() => {
-  if (!scene) return;
-  scene.traverse((obj) => {
-    if (obj.isMesh) {
-      console.log("Mesh name:", obj.name);
-    }
-  });
-}, [scene]);
+// removed debug mesh-name logging
 
 
   // --- Glow Material Color Update ---
@@ -96,43 +89,221 @@ useEffect(() => {
   // LED toggle state (default OFF)
   const [ledOn, setLedOn] = React.useState(false);
 
-  // --- PepsiTexture Glow Animation ---
+  // --- Door-only mesh logger ---
+  // Traverse the Door object (if present) and log all child mesh names so the user can identify the exact mesh to target
   useEffect(() => {
     if (!scene) return;
-    let targetMaterial = null;
-    scene.traverse((obj) => {
-      if (obj.isMesh && obj.material) {
-        // Check for texture name or mesh name containing 'PepsiTexture'
-        if (
-          (obj.material.map && obj.material.map.name && obj.material.map.name.toLowerCase().includes('pepsi')) ||
-          (obj.name && obj.name.toLowerCase().includes('pepsi'))
-        ) {
-          targetMaterial = obj.material;
+    const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
+    if (!door) {
+      console.warn('No Door object found in scene to inspect.');
+      return;
+    }
+    // door mesh listing removed (debug)
+  }, [scene]);
+
+  // --- Door UV inspector and optional visual checker ---
+  useEffect(() => {
+    if (!scene) return;
+    const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
+    if (!door) return;
+
+  // Door UV inspection (logs removed)
+    const meshesWithUV = [];
+    door.traverse((child) => {
+      if (child.isMesh) {
+        const geom = child.geometry;
+        const hasUV = !!(geom && geom.attributes && (geom.attributes.uv || geom.attributes.uv2));
+  const uvAttr = geom && geom.attributes ? (geom.attributes.uv || geom.attributes.uv2) : null;
+  const uvCount = uvAttr ? uvAttr.count : 0;
+        if (hasUV) meshesWithUV.push(child);
+      }
+    });
+  // end UV inspection
+
+    // If debugUV is true, apply a reversible checker texture to meshes that have UVs so user can visually confirm mapping
+    if (debugUV && meshesWithUV.length > 0) {
+      // create a small checker canvas texture
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const checker = (x, y, s) => ((x + y) % 2 === 0) ? '#ffffff' : '#444444';
+      const cell = 32;
+      for (let y = 0; y < size; y += cell) {
+        for (let x = 0; x < size; x += cell) {
+          ctx.fillStyle = checker(Math.floor(x / cell), Math.floor(y / cell));
+          ctx.fillRect(x, y, cell, cell);
+        }
+      }
+      const checkerTex = new THREE.CanvasTexture(canvas);
+      checkerTex.encoding = THREE.sRGBEncoding;
+      checkerTex.wrapS = checkerTex.wrapT = THREE.RepeatWrapping;
+      checkerTex.repeat.set(1, 1);
+
+      // store original maps to restore on cleanup
+      const originalMaps = new Map();
+      meshesWithUV.forEach((m) => {
+        if (!m.material) m.material = new THREE.MeshStandardMaterial();
+        originalMaps.set(m.uuid, m.material.map || null);
+        if (m.material.map && m.material.map.dispose) m.material.map.dispose();
+        m.material.map = checkerTex;
+        m.material.needsUpdate = true;
+      });
+
+      return () => {
+        // restore original maps
+        meshesWithUV.forEach((m) => {
+          const orig = originalMaps.get(m.uuid) || null;
+          if (m.material) {
+            if (m.material.map && m.material.map.dispose && m.material.map !== orig) {
+              m.material.map.dispose();
+            }
+            m.material.map = orig;
+            m.material.needsUpdate = true;
+          }
+        });
+        // dispose checker texture
+        if (checkerTex) checkerTex.dispose();
+      };
+    }
+    // no cleanup needed if debugUV not enabled
+    return undefined;
+  }, [scene, debugUV]);
+
+  // --- Apply uploaded pepsiTexture to Door Cylinder001 meshes ---
+  useEffect(() => {
+    if (!scene) return;
+    const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
+    if (!door) return;
+
+    // Helper to match exactly Cylinder001 or Cylinder.001 (no wildcard)
+    const isCylinder001 = (name) => {
+      if (!name) return false;
+      const lower = name.toLowerCase();
+      return lower === 'cylinder001' || lower === 'cylinder.001';
+    };
+
+    // If no pepsiTexture, remove maps applied earlier (restore emissiveMap to null)
+    if (!pepsiTexture) {
+      door.traverse((child) => {
+        if (child.isMesh && isCylinder001(child.name)) {
+          if (child.material) {
+            if (child.material.map && child.material.map.dispose) {
+              child.material.map.dispose();
+            }
+            child.material.map = null;
+            child.material.emissiveMap = null;
+            child.material.emissive = new THREE.Color(0x000000);
+            child.material.emissiveIntensity = 0;
+            // restore default side
+            child.material.side = THREE.FrontSide;
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+      return;
+    }
+
+    // Load and apply the texture to matching meshes
+    const loader = new THREE.TextureLoader();
+    try {
+      loader.load(pepsiTexture, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.flipY = false;
+        tex.needsUpdate = true;
+
+        door.traverse((child) => {
+          if (child.isMesh && isCylinder001(child.name)) {
+            if (!child.material) child.material = new THREE.MeshStandardMaterial();
+            // dispose previous map if any
+            if (child.material.map && child.material.map.dispose) child.material.map.dispose();
+
+            // adjust texture orientation: force a mirror horizontally (flip around Y axis)
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            // ensure offset/center/rotation are explicit and keep repeat positive (no mirror)
+            tex.center.set(0.5, 0.5);
+            tex.offset.set(0, 0);
+            tex.rotation = 0;
+            tex.repeat.set(Math.abs(tex.repeat.x || 1), Math.abs(tex.repeat.y || 1));
+            tex.needsUpdate = true;
+
+            child.material.map = tex;
+            child.material.emissiveMap = tex;
+            child.material.emissive = new THREE.Color(0xffffff);
+            child.material.emissiveIntensity = 1.2;
+            // ensure both sides show (handles inverted normals)
+            child.material.side = THREE.DoubleSide;
+            child.material.needsUpdate = true;
+          }
+        });
+      });
+    } catch (e) {
+      console.warn('Failed to apply pepsiTexture to Door Cylinder meshes', e);
+    }
+    // No explicit cleanup here; textures are disposed when removed or on unmount by other effects
+  }, [scene, pepsiTexture]);
+
+  // --- Logo glow animation for Cylinder001 when pepsiTexture is present ---
+  useEffect(() => {
+    if (!scene) return;
+    const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
+    if (!door) return;
+
+    // find the Cylinder001 mesh(s)
+    const targets = [];
+    door.traverse((child) => {
+      if (child.isMesh && child.name) {
+        const lower = child.name.toLowerCase();
+        if (lower === 'cylinder001' || lower === 'cylinder.001') {
+          targets.push(child);
         }
       }
     });
-    if (targetMaterial) {
-      // Use the texture itself for emission (emissiveMap)
-      if (targetMaterial.map) {
-        targetMaterial.emissiveMap = targetMaterial.map;
-      }
-      targetMaterial.emissive = new THREE.Color(0xffffff); // white, but texture will show
-      targetMaterial.emissiveIntensity = 0.0;
-      targetMaterial.needsUpdate = true;
-      gsap.to(targetMaterial, {
-        emissiveIntensity: 3.2,
-        duration: 0.7,
+
+    if (targets.length === 0) return;
+
+    // create GSAP tweens for each material's emissiveIntensity
+    const tweens = [];
+    targets.forEach((mesh) => {
+      const mat = mesh.material;
+      if (!mat) return;
+
+      // ensure starting emissiveIntensity is defined
+      if (typeof mat.emissiveIntensity !== 'number') mat.emissiveIntensity = 0;
+
+      const tween = gsap.to(mat, {
+        emissiveIntensity: mat.emissiveIntensity > 0 ? Math.max(mat.emissiveIntensity, 2.5) : 2.5,
+        duration: 1.2,
         repeat: -1,
         yoyo: true,
         ease: 'sine.inOut',
-        onUpdate: () => { targetMaterial.needsUpdate = true; }
+        onUpdate: () => {
+          // ensure the material updates in r3f
+          if (mat) mat.needsUpdate = true;
+        }
       });
-    }
-    // Cleanup: kill GSAP tweens on unmount
+      tweens.push(tween);
+    });
+
+    // If pepsiTexture is removed, or on cleanup, kill tweens and reset emissiveIntensity
     return () => {
-      if (targetMaterial) gsap.killTweensOf(targetMaterial);
+      tweens.forEach(t => t.kill && t.kill());
+      targets.forEach((mesh) => {
+        const mat = mesh.material;
+        if (mat) {
+          // reset to baseline if no pepsiTexture
+          if (!pepsiTexture) {
+            mat.emissiveIntensity = 0;
+            mat.emissive = new THREE.Color(0x000000);
+            mat.emissiveMap = null;
+            mat.side = THREE.FrontSide;
+          }
+          mat.needsUpdate = true;
+        }
+      });
     };
-  }, [scene]);
+  }, [scene, pepsiTexture]);
 
   // Find and store the Point light, and handle Insidestrip glow effect
   const pointLightRef = useRef(null);
@@ -284,15 +455,15 @@ if (!scene || !threeScene) return;
 
   // --- Helper: Set user texture params for consistent mapping ---
 const setUserTextureParams = (t, gl) => {
-  t.encoding = THREE.sRGBEncoding;
-  t.anisotropy = gl?.capabilities?.getMaxAnisotropy ? gl.capabilities.getMaxAnisotropy() : 16;
-  t.flipY = false;
-  t.offset.y = 0;
-  t.offset.x = -0.25;
-  t.center.set(0.36, 0.5);
-  t.rotation = Math.PI;
-  t.repeat.set(2.1, 0.9);
-  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+    t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = gl.capabilities?.getMaxAnisotropy ? gl.capabilities.getMaxAnisotropy() : 16;
+    t.flipY = false;
+    t.offset.y = 0;
+    t.offset.x=-0.25;
+    t.center.set(0.33, 0.5);
+    t.rotation = Math.PI ;
+    t.repeat.set(2.5,0.9);
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
 };
 
   // Apply uploaded texture to Insidestrip1...6 meshes
@@ -374,6 +545,8 @@ const setUserTextureParams = (t, gl) => {
     img.onload = () => {
       const texture = new THREE.Texture(img);
       setUserTextureParams(texture, gl);
+      // Fix vertical inversion for side panel
+     
       texture.needsUpdate = true;
       let found = false;
       scene.traverse((obj) => {
@@ -429,6 +602,8 @@ const setUserTextureParams = (t, gl) => {
     img.onload = () => {
       const texture = new THREE.Texture(img);
       setUserTextureParams(texture, gl);
+      // Fix vertical inversion for side panel
+     
       texture.needsUpdate = true;
       let found = false;
       scene.traverse((obj) => {

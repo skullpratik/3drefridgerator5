@@ -107,6 +107,7 @@ function CanvasContent({
   handleColor,
   sidePanelLeftTexture,
   sidePanelRightTexture,
+  pepsiTexture,
 }) {
   return (
     <>
@@ -153,6 +154,7 @@ function CanvasContent({
           handleColor={handleColor}
           sidePanelLeftTexture={sidePanelLeftTexture}
           sidePanelRightTexture={sidePanelRightTexture}
+          pepsiTexture={pepsiTexture}
         />
       )}
       {modelType === "deepfridge" && (
@@ -344,9 +346,10 @@ export default function App() {
   const [newVisiGlowColor, setNewVisiGlowColor] = useState("#ffffff");
   // InsideStrip texture state for NewVisicooler
   const [insideStripTexture, setInsideStripTexture] = useState(null);
+  const [pepsiTexture, setPepsiTexture] = useState(null);
   const [canopyColor, setCanopyColor] = useState(null);
   const [fridgeColor, setFridgeColor] = useState('#3407f9'); // Default blue
-  const [handleColor, setHandleColor] = useState('#837f7fff');
+  const [handleColor, setHandleColor] = useState('#655f5fff');
   const [sidePanelLeftTexture, setSidePanelLeftTexture] = useState(null);
   const [sidePanelRightTexture, setSidePanelRightTexture] = useState(null);
   const [bottomBorderColor, setBottomBorderColor] = useState(null);
@@ -628,6 +631,8 @@ export default function App() {
                   onInsideStripTextureUpload={dataUrl => setInsideStripTexture(dataUrl)}
                   onSidePanelLeftTextureUpload={dataUrl => setSidePanelLeftTexture(dataUrl)}
                   onSidePanelRightTextureUpload={dataUrl => setSidePanelRightTexture(dataUrl)}
+                  onPepsiTextureUpload={dataUrl => setPepsiTexture(dataUrl)}
+                  pepsiTexture={pepsiTexture}
                 />
               )}
               {modelType === "deepfridge" && (
@@ -685,6 +690,7 @@ export default function App() {
             handleColor={handleColor}
             sidePanelLeftTexture={sidePanelLeftTexture}
             sidePanelRightTexture={sidePanelRightTexture}
+            pepsiTexture={pepsiTexture}
           />
         </Canvas>
         <DownloadButton gl={gl} />

@@ -49,7 +49,7 @@ const ColorButton = styled(Button)(({ theme, backgroundcolor }) => ({
   }
 }));
 
-export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fridgeColor, onFridgeColorChange, handleColor, onHandleColorChange, onInsideStripTextureUpload, onSidePanelLeftTextureUpload, onSidePanelRightTextureUpload }) => {
+export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fridgeColor, onFridgeColorChange, handleColor, onHandleColorChange, onInsideStripTextureUpload, onSidePanelLeftTextureUpload, onSidePanelRightTextureUpload, onPepsiTextureUpload, pepsiTexture }) => {
   // Color pickers
   const [colorPickerOpen, setColorPickerOpen] = useState({ glow: false, fridge: false, handle: false });
   const [colorPickerAnchor, setColorPickerAnchor] = useState({ glow: null, fridge: null, handle: null });
@@ -58,6 +58,7 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
   const [pendingImage, setPendingImage] = useState(null);
   const [pendingSidePanelLeft, setPendingSidePanelLeft] = useState(null);
   const [pendingSidePanelRight, setPendingSidePanelRight] = useState(null);
+  const [pendingPepsi, setPendingPepsi] = useState(null);
 
   // Handlers for color pickers
   const handleColorPickerOpen = (type, event) => {
@@ -81,22 +82,22 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}><ImageIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} /> Image Customization</Typography>
           <Grid container spacing={1}>
-            {/* All three upload widgets in a single row with image preview */}
+            {/* All four upload widgets in a single row with image preview */}
             <Grid item xs={4}>
               <StyledCard variant="outlined">
-                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '120px' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}>
-                    InsideStrip Texture
+                    InsideStrip
                   </Typography>
                   {pendingImage ? (
-                    <Box sx={{ position: 'relative', mb: 1, width: '100%' }}>
-                      <Box component="img" src={pendingImage} sx={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="InsideStrip preview" />
-                      <IconButton size="small" onClick={() => { setPendingImage(null); if (onInsideStripTextureUpload) onInsideStripTextureUpload(null); }} sx={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 20, height: 20 }}>
+                    <Box sx={{ position: 'relative', mb: 1, width: '100%', flexGrow: 1 }}>
+                      <Box component="img" src={pendingImage} sx={{ width: '100%', height: '100%', maxHeight: '50px', objectFit: 'cover', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="InsideStrip preview" />
+                      <IconButton size="small" onClick={() => { setPendingImage(null); if (onInsideStripTextureUpload) onInsideStripTextureUpload(null); }} sx={{ position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 16, height: 16 }}>
                         <CloseIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   ) : (
-                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
                       <SmallButton variant="outlined" component="label" fullWidth startIcon={<CloudUploadIcon sx={{ fontSize: '0.9rem' }} />} sx={{ backgroundColor: "#f7f9fc", border: "1px dashed #ccc", "&:hover": { border: "1px dashed #007bff", backgroundColor: "#e3f2fd" }, borderRadius: 0.5, py: 1 }}>
                         Upload
                         <input type="file" hidden accept="image/*" onChange={e => { const file = e.target.files && e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { setPendingImage(ev.target.result); }; reader.readAsDataURL(file); }} />
@@ -109,26 +110,26 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
                     onClick={() => {
                       if (pendingImage && onInsideStripTextureUpload) onInsideStripTextureUpload(pendingImage);
                     }}
-                    sx={{ mt: 1 }}
+                    sx={{ mt: 1, fontSize: '0.7rem', padding: '2px 6px' }}
                   >Apply</SmallButton>
                 </CardContent>
               </StyledCard>
             </Grid>
             <Grid item xs={4}>
               <StyledCard variant="outlined">
-                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '120px' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}>
-                    SidepannelLeft Texture
+                    SidepannelLeft
                   </Typography>
                   {pendingSidePanelLeft ? (
-                    <Box sx={{ position: 'relative', mb: 1, width: '100%' }}>
-                      <Box component="img" src={pendingSidePanelLeft} sx={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="SidepannelLeft preview" />
-                      <IconButton size="small" onClick={() => { setPendingSidePanelLeft(null); if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload(null); }} sx={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 20, height: 20 }}>
+                    <Box sx={{ position: 'relative', mb: 1, width: '100%', flexGrow: 1 }}>
+                      <Box component="img" src={pendingSidePanelLeft} sx={{ width: '100%', height: '100%', maxHeight: '50px', objectFit: 'cover', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="SidepannelLeft preview" />
+                      <IconButton size="small" onClick={() => { setPendingSidePanelLeft(null); if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload(null); }} sx={{ position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 16, height: 16 }}>
                         <CloseIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   ) : (
-                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
                       <SmallButton variant="outlined" component="label" fullWidth startIcon={<CloudUploadIcon sx={{ fontSize: '0.9rem' }} />} sx={{ backgroundColor: "#f7f9fc", border: "1px dashed #ccc", "&:hover": { border: "1px dashed #007bff", backgroundColor: "#e3f2fd" }, borderRadius: 0.5, py: 1 }}>
                         Upload
                         <input type="file" hidden accept="image/*" onChange={e => { const file = e.target.files && e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { setPendingSidePanelLeft(ev.target.result); }; reader.readAsDataURL(file); }} />
@@ -141,26 +142,26 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
                     onClick={() => {
                       if (pendingSidePanelLeft && onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload(pendingSidePanelLeft);
                     }}
-                    sx={{ mt: 1 }}
+                    sx={{ mt: 1, fontSize: '0.7rem', padding: '2px 6px' }}
                   >Apply</SmallButton>
                 </CardContent>
               </StyledCard>
             </Grid>
             <Grid item xs={4}>
               <StyledCard variant="outlined">
-                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '120px' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}>
-                    SidepannelRight Texture
+                    SidepannelRight
                   </Typography>
                   {pendingSidePanelRight ? (
-                    <Box sx={{ position: 'relative', mb: 1, width: '100%' }}>
-                      <Box component="img" src={pendingSidePanelRight} sx={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="SidepannelRight preview" />
-                      <IconButton size="small" onClick={() => { setPendingSidePanelRight(null); if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload(null); }} sx={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 20, height: 20 }}>
+                    <Box sx={{ position: 'relative', mb: 1, width: '100%', flexGrow: 1 }}>
+                      <Box component="img" src={pendingSidePanelRight} sx={{ width: '100%', height: '100%', maxHeight: '50px', objectFit: 'cover', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="SidepannelRight preview" />
+                      <IconButton size="small" onClick={() => { setPendingSidePanelRight(null); if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload(null); }} sx={{ position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 16, height: 16 }}>
                         <CloseIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   ) : (
-                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
                       <SmallButton variant="outlined" component="label" fullWidth startIcon={<CloudUploadIcon sx={{ fontSize: '0.9rem' }} />} sx={{ backgroundColor: "#f7f9fc", border: "1px dashed #ccc", "&:hover": { border: "1px dashed #007bff", backgroundColor: "#e3f2fd" }, borderRadius: 0.5, py: 1 }}>
                         Upload
                         <input type="file" hidden accept="image/*" onChange={e => { const file = e.target.files && e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { setPendingSidePanelRight(ev.target.result); }; reader.readAsDataURL(file); }} />
@@ -173,7 +174,39 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
                     onClick={() => {
                       if (pendingSidePanelRight && onSidePanelRightTextureUpload) onSidePanelRightTextureUpload(pendingSidePanelRight);
                     }}
-                    sx={{ mt: 1 }}
+                    sx={{ mt: 1, fontSize: '0.7rem', padding: '2px 6px' }}
+                  >Apply</SmallButton>
+                </CardContent>
+              </StyledCard>
+            </Grid>
+            <Grid item xs={3}>
+              <StyledCard variant="outlined">
+                <CardContent sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '120px' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}>
+                    Logo
+                  </Typography>
+                  {pendingPepsi ? (
+                    <Box sx={{ position: 'relative', mb: 1, width: '100%', flexGrow: 1 }}>
+                      <Box component="img" src={pendingPepsi} sx={{ width: '100%', height: '100%', maxHeight: '50px', objectFit: 'contain', borderRadius: 0.5, border: '1px solid #e0e0e0' }} alt="Pepsi Logo preview" />
+                      <IconButton size="small" onClick={() => { setPendingPepsi(null); if (onPepsiTextureUpload) onPepsiTextureUpload(null); }} sx={{ position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.9)' }, width: 16, height: 16 }}>
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
+                      <SmallButton variant="outlined" component="label" fullWidth startIcon={<CloudUploadIcon sx={{ fontSize: '0.9rem' }} />} sx={{ backgroundColor: "#f7f9fc", border: "1px dashed #ccc", "&:hover": { border: "1px dashed #007bff", backgroundColor: "#e3f2fd" }, borderRadius: 0.5, py: 1 }}>
+                        Upload
+                        <input type="file" hidden accept="image/*" onChange={e => { const file = e.target.files && e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { setPendingPepsi(ev.target.result); }; reader.readAsDataURL(file); }} />
+                      </SmallButton>
+                    </Box>
+                  )}
+                  <SmallButton
+                    variant="contained"
+                    disabled={!pendingPepsi}
+                    onClick={() => {
+                      if (pendingPepsi && onPepsiTextureUpload) onPepsiTextureUpload(pendingPepsi);
+                    }}
+                    sx={{ mt: 1, fontSize: '0.7rem', padding: '2px 6px' }}
                   >Apply</SmallButton>
                 </CardContent>
               </StyledCard>
