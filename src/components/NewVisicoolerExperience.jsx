@@ -225,7 +225,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
             tex.center.set(0.5, 0.5);
             tex.offset.set(0, 0);
             tex.rotation = 0;
-             tex.repeat.set(1.84,1.01);
+             tex.repeat.set(2,1.01);
             tex.needsUpdate = true;
 
             child.material.map = tex;
