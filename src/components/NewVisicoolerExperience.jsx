@@ -6,8 +6,21 @@ import gsap from 'gsap';
 
 useGLTF.preload('/models/NewVisicooler2.glb');
 
-
-export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', position = [0, -0.8, 0], scale = 1.0, onAssetLoaded, doorAxis = 'x', glowColor = '#fff700', insideStripTexture = null, fridgeColor = '#ffffff', handleColor = '#ffffff', sidePanelLeftTexture = null, sidePanelRightTexture = null, pepsiTexture = null, debugUV = false }, ref) => {
+export const Experience = forwardRef(({
+  lighting = 'photo_studio_01_1k.hdr',
+  position = [0, -0.8, 0],
+  scale = 1.0,
+  onAssetLoaded,
+  doorAxis = 'x',
+  glowColor = '#fff700',
+  insideStripTexture = null,
+  fridgeColor = '#ffffff',
+  handleColor = '#ffffff',
+  sidePanelLeftTexture = null,
+  sidePanelRightTexture = null,
+  pepsiTexture = null,
+  debugUV = false
+}, ref) => {
   const { scene: threeScene, camera, gl } = useThree();
   const { scene: originalScene } = useGLTF('/models/NewVisicooler2.glb');
   // clone to avoid reuse issues
@@ -39,7 +52,6 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       if (obj.isMesh) {
         const mat = obj.material;
         if (mat && mat.name && typeof mat.name === 'string') {
-          // Compare with all possible casing and trim whitespace
           const matName = mat.name.trim().toLowerCase();
           if (matName === 'handlecolor') {
             if (mat.color) {
@@ -56,26 +68,20 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
     }
   }, [scene, handleColor]);
 
-  // --- InsideStrip Texture Update ---
-  // --- Debug: Log all mesh names ---
-// removed debug mesh-name logging
-
-
-  // --- Glow Material Color Update ---
+  // --- Glow Material Color Update (for generic glow materials) ---
   useEffect(() => {
     if (!scene) return;
     scene.traverse((obj) => {
       if (obj.isMesh && obj.material && obj.material.name && obj.material.name.toLowerCase().includes('glow')) {
         if (obj.material.emissive && obj.material.color) {
           obj.material.emissive.set(glowColor);
-          obj.material.color.set(glowColor); // Set base color to match emissive for full color glow
+          obj.material.color.set(glowColor); // Set base color to match emissive for tube look
           obj.material.emissiveIntensity = 15.0; // strong tube effect
           obj.material.needsUpdate = true;
         }
       }
     });
   }, [scene, glowColor]);
-
 
   const sceneRef = useRef();
   const doorRef = useRef();
@@ -87,10 +93,9 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
   const mouse = useRef(new THREE.Vector2());
 
   // LED toggle state (default OFF)
-  const [ledOn, setLedOn] = React.useState(false);
+  const [ledOn, setLedOn] = useState(false);
 
   // --- Door-only mesh logger ---
-  // Traverse the Door object (if present) and log all child mesh names so the user can identify the exact mesh to target
   useEffect(() => {
     if (!scene) return;
     const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
@@ -98,7 +103,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       console.warn('No Door object found in scene to inspect.');
       return;
     }
-    // door mesh listing removed (debug)
+    // debug logging removed
   }, [scene]);
 
   // --- Door UV inspector and optional visual checker ---
@@ -107,22 +112,16 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
     const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
     if (!door) return;
 
-  // Door UV inspection (logs removed)
     const meshesWithUV = [];
     door.traverse((child) => {
       if (child.isMesh) {
         const geom = child.geometry;
         const hasUV = !!(geom && geom.attributes && (geom.attributes.uv || geom.attributes.uv2));
-  const uvAttr = geom && geom.attributes ? (geom.attributes.uv || geom.attributes.uv2) : null;
-  const uvCount = uvAttr ? uvAttr.count : 0;
         if (hasUV) meshesWithUV.push(child);
       }
     });
-  // end UV inspection
 
-    // If debugUV is true, apply a reversible checker texture to meshes that have UVs so user can visually confirm mapping
     if (debugUV && meshesWithUV.length > 0) {
-      // create a small checker canvas texture
       const size = 256;
       const canvas = document.createElement('canvas');
       canvas.width = size;
@@ -137,11 +136,12 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
         }
       }
       const checkerTex = new THREE.CanvasTexture(canvas);
-      checkerTex.encoding = THREE.sRGBEncoding;
+      // backwards-compatible encoding set
+      if ('colorSpace' in checkerTex) checkerTex.colorSpace = THREE.SRGBColorSpace;
+      else checkerTex.encoding = THREE.sRGBEncoding;
       checkerTex.wrapS = checkerTex.wrapT = THREE.RepeatWrapping;
       checkerTex.repeat.set(1, 1);
 
-      // store original maps to restore on cleanup
       const originalMaps = new Map();
       meshesWithUV.forEach((m) => {
         if (!m.material) m.material = new THREE.MeshStandardMaterial();
@@ -152,7 +152,6 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       });
 
       return () => {
-        // restore original maps
         meshesWithUV.forEach((m) => {
           const orig = originalMaps.get(m.uuid) || null;
           if (m.material) {
@@ -163,15 +162,14 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
             m.material.needsUpdate = true;
           }
         });
-        // dispose checker texture
         if (checkerTex) checkerTex.dispose();
       };
     }
-    // no cleanup needed if debugUV not enabled
     return undefined;
   }, [scene, debugUV]);
 
-  // --- Apply uploaded pepsiTexture to Door Cylinder001 meshes ---
+  // --- Apply uploaded pepsiTexture to Door Cylinder001 meshes (base map only) ---
+  // We'll avoid using the same texture for emissiveMap; emissive will be animated separately.
   useEffect(() => {
     if (!scene) return;
     const door = scene.getObjectByName('Door') || scene.getObjectByName('door');
@@ -184,6 +182,9 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       return lower === 'cylinder001' || lower === 'cylinder.001';
     };
 
+    // Track created texture(s) so we can dispose on cleanup
+    let createdTexture = null;
+
     // If no pepsiTexture, remove maps applied earlier (restore emissiveMap to null)
     if (!pepsiTexture) {
       door.traverse((child) => {
@@ -193,46 +194,58 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
               child.material.map.dispose();
             }
             child.material.map = null;
+            // keep emissive clean (no emissiveMap)
             child.material.emissiveMap = null;
             child.material.emissive = new THREE.Color(0x000000);
             child.material.emissiveIntensity = 0;
-            // restore default side
             child.material.side = THREE.FrontSide;
             child.material.needsUpdate = true;
           }
         }
       });
-      return;
+      return undefined;
     }
 
-    // Load and apply the texture to matching meshes
+    // Load and apply the texture to matching meshes (base map only)
     const loader = new THREE.TextureLoader();
+    let cancelled = false;
     try {
       loader.load(pepsiTexture, (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
+        if (cancelled) {
+          if (tex && tex.dispose) tex.dispose();
+          return;
+        }
+
+        // Support older/newer three.js naming:
+        if ('colorSpace' in tex) tex.colorSpace = THREE.SRGBColorSpace;
+        else tex.encoding = THREE.sRGBEncoding;
         tex.flipY = false;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.center.set(0.5, 0.5);
+        tex.offset.set(0, 0);
+        tex.rotation = 0;
+        tex.repeat.set(2, 1.01);
         tex.needsUpdate = true;
+
+        // store for cleanup
+        createdTexture = tex;
 
         door.traverse((child) => {
           if (child.isMesh && isCylinder001(child.name)) {
             if (!child.material) child.material = new THREE.MeshStandardMaterial();
+
             // dispose previous map if any
             if (child.material.map && child.material.map.dispose) child.material.map.dispose();
 
-            // adjust texture orientation: force a mirror horizontally (flip around Y axis)
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            // ensure offset/center/rotation are explicit and keep repeat positive (no mirror)
-            tex.center.set(0.5, 0.5);
-            tex.offset.set(0, 0);
-            tex.rotation = 0;
-             tex.repeat.set(2,1.01);
-            tex.needsUpdate = true;
-
+            // Apply Pepsi image as base map ONLY
             child.material.map = tex;
-            child.material.emissiveMap = tex;
-            child.material.emissive = new THREE.Color(0xffffff);
-            child.material.emissiveIntensity = 1;
-            // ensure both sides show (handles inverted normals)
+
+            // IMPORTANT: do NOT set emissiveMap to the same tex.
+            // We'll use a separate emissive color and animate emissiveIntensity.
+            child.material.emissiveMap = null;
+            // Choose a subtle default emissive color (we'll animate intensity later).
+            child.material.emissive = new THREE.Color(0xffffff); // white glow color for logo
+            child.material.emissiveIntensity = 0; // start with no glow
             child.material.side = THREE.DoubleSide;
             child.material.needsUpdate = true;
           }
@@ -241,7 +254,17 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
     } catch (e) {
       console.warn('Failed to apply pepsiTexture to Door Cylinder meshes', e);
     }
-    // No explicit cleanup here; textures are disposed when removed or on unmount by other effects
+
+    // cleanup when pepsiTexture changes or component unmounts
+    return () => {
+      cancelled = true;
+      if (createdTexture && createdTexture.dispose) {
+        // IMPORTANT: don't dispose if that texture is being used by other meshes that still need it;
+        // in this small scope we created and assigned it only to Cylinder meshes above,
+        // so safe to dispose here.
+        createdTexture.dispose();
+      }
+    };
   }, [scene, pepsiTexture]);
 
   // --- Logo glow animation for Cylinder001 when pepsiTexture is present ---
@@ -263,7 +286,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
 
     if (targets.length === 0) return;
 
-    // If there's no pepsiTexture, ensure logo is not glowing and exit early
+    // if no pepsiTexture, ensure logo is not glowing and exit early
     if (!pepsiTexture) {
       targets.forEach((mesh) => {
         const m = mesh.material;
@@ -275,49 +298,58 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
           m.needsUpdate = true;
         }
       });
-      return;
+      return undefined;
     }
 
-    // create timelines that: ramp up -> ramp down -> hold zero for 1.5s, then repeat
+    // create timelines that animate emissiveIntensity (pulse) for each mesh
     const tls = [];
     targets.forEach((mesh, idx) => {
       const mat = mesh.material;
       if (!mat) return;
-      const maxIntensity = Math.max(typeof mat.emissiveIntensity === 'number' ? mat.emissiveIntensity : 1.5, 1.5);
-      if (!mat.emissive) mat.emissive = new THREE.Color(0xffffff);
+
+      // ensure emissive color exists and starts at 0 intensity
+  if (!mat.emissive) mat.emissive = new THREE.Color(0xffffff);
+  // you may change this color if you want a different glow
+  mat.emissive.set(0xffffff);
       mat.emissiveIntensity = 0;
+      mat.emissiveMap = null; // ensure no emissiveMap reuse
       mat.needsUpdate = true;
 
-      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0, delay: idx * 0.18 });
-      // ramp up smoothly
-      tl.to(mat, { emissiveIntensity: maxIntensity, duration: 0.9, ease: 'sine.inOut', onUpdate: () => mat && (mat.needsUpdate = true) });
-      // ramp back down smoothly
-      tl.to(mat, { emissiveIntensity: 0, duration: 0.9, ease: 'sine.inOut', onUpdate: () => mat && (mat.needsUpdate = true) });
-      // hold at zero for 1.5s
-      tl.to({}, { duration: 1.5 });
+      // create timeline for this mesh
+      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0, delay: idx * 0.12 });
+      // pulse from 0 -> peak -> 0, then hold a little
+      tl.to(mat, {
+        emissiveIntensity: 0.25, // reduced peak glow for subtle effect
+        duration: 0.9,
+        ease: 'sine.inOut',
+        onUpdate: () => mat && (mat.needsUpdate = true)
+      });
+      tl.to(mat, {
+        emissiveIntensity: 0,
+        duration: 0.9,
+        ease: 'sine.inOut',
+        onUpdate: () => mat && (mat.needsUpdate = true)
+      });
+      tl.to({}, { duration: 1.2 }); // pause before next pulse
 
       tls.push(tl);
     });
 
-    // cleanup
+    // cleanup: stop timelines and reset mats
     return () => {
       tls.forEach(t => t.kill && t.kill());
       targets.forEach((mesh) => {
         const mat = mesh.material;
         if (mat) {
-          if (!pepsiTexture) {
-            mat.emissiveIntensity = 0;
-            mat.emissive = new THREE.Color(0x000000);
-            mat.emissiveMap = null;
-            mat.side = THREE.FrontSide;
-          }
+          mat.emissiveIntensity = 0;
+          // keep the map intact (we're not removing the logo), but clear emissive color if desired:
+          // mat.emissive = new THREE.Color(0x000000);
+          mat.emissiveMap = null;
           mat.needsUpdate = true;
         }
       });
     };
   }, [scene, pepsiTexture]);
-
-  
 
   // Find and store the Point light, and handle Insidestrip glow effect
   const pointLightRef = useRef(null);
@@ -336,7 +368,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
         for (let i = 1; i <= 6; i++) {
           if (lower === `insidestrip${i}` && obj.material) {
             if (ledOn && obj.material.map) {
-              // Use the uploaded image as the emissiveMap for glow
+              // Use the uploaded image as the emissiveMap for strip glow (these are strips, so this is fine)
               obj.material.emissive = new THREE.Color(0xffffff);
               obj.material.emissiveIntensity = 1.5;
               obj.material.emissiveMap = obj.material.map;
@@ -352,8 +384,6 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       }
     });
   }, [scene, ledOn]);
-
-  // Presets are handled by the Interface component (UI) — no in-scene preset UI here.
 
   // expose API
   useEffect(() => {
@@ -396,7 +426,7 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
     });
     toRemove.forEach(l => { if (l.parent) l.parent.remove(l); });
 
-  // store refs to door/glass if present and record their initial rotations
+    // store refs to door/glass if present and record their initial rotations
     doorRef.current = scene.getObjectByName('Door') || scene.getObjectByName('door') || null;
     glassRef.current = scene.getObjectByName('Glass') || scene.getObjectByName('glass') || null;
     if (doorRef.current) {
@@ -410,12 +440,12 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
     scene.traverse(c => { if (c.isMesh && c.name !== 'Door') { c.castShadow = true; c.receiveShadow = true; } });
 
     // Apply initial transform
-if (!scene || !threeScene) return;
+    if (!scene || !threeScene) return;
     threeScene.background = null;
     scene.scale.set(2, 2, 2);
     scene.position.set(0.2, -1.5, 0);
 
-  // notify parent
+    // notify parent
     if (onAssetLoaded) onAssetLoaded();
 
     // cleanup will be handled in separate effect
@@ -425,18 +455,15 @@ if (!scene || !threeScene) return;
   useEffect(() => {
     if (!scene || !camera || !gl) return;
 
-   const handleClick = (event) => {
-    console.debug('[NewVisi] canvas click', { clientX: event.clientX, clientY: event.clientY });
+    const handleClick = (event) => {
       const rect = gl.domElement.getBoundingClientRect();
       mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.current.setFromCamera(mouse.current, camera);
 
-  const intersectsDoor = doorRef.current ? raycaster.current.intersectObject(doorRef.current, true) : [];
-  console.debug('[NewVisi] intersectsDoor count ->', intersectsDoor.length);
-
-  if (intersectsDoor.length > 0) {
-        // rotate the Door object only (Door is assumed to contain glass) using quaternion
+      const intersectsDoor = doorRef.current ? raycaster.current.intersectObject(doorRef.current, true) : [];
+      if (intersectsDoor.length > 0) {
+        // rotate the Door object only using quaternion
         const axisStr = (typeof doorAxis === 'string' ? doorAxis.toLowerCase() : 'x');
         const axis = axisStr === 'x' ? new THREE.Vector3(1, 0, 0) : axisStr === 'y' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
         const angle = Math.PI / 2; // 90deg
@@ -468,8 +495,6 @@ if (!scene || !threeScene) return;
     if (gl && gl.toneMappingExposure !== undefined) gl.toneMappingExposure = 1;
   }, [gl]);
 
-
-
   // Apply uploaded texture to Insidestrip1...6 meshes
   useEffect(() => {
     if (!scene) return;
@@ -496,7 +521,8 @@ if (!scene || !threeScene) return;
     img.onload = () => {
       const texture = new THREE.Texture(img);
       // Restore original mapping for InsideStrip (no setUserTextureParams)
-      texture.encoding = THREE.sRGBEncoding;
+      if ('colorSpace' in texture) texture.colorSpace = THREE.SRGBColorSpace;
+      else texture.encoding = THREE.sRGBEncoding;
       texture.flipY = false;
       texture.needsUpdate = true;
       let found = false;
@@ -548,20 +574,19 @@ if (!scene || !threeScene) return;
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const texture = new THREE.Texture(img);
-      texture.encoding = THREE.sRGBEncoding;
+      if ('colorSpace' in texture) texture.colorSpace = THREE.SRGBColorSpace;
+      else texture.encoding = THREE.sRGBEncoding;
       texture.anisotropy = 16;
       texture.flipY = false;
-       texture.center.set(0, 0.5);
-        texture.repeat.set(3,0.9);
+      texture.center.set(0, 0.5);
+      texture.repeat.set(3, 0.9);
       texture.needsUpdate = true;
       let found = false;
       scene.traverse((obj) => {
         if (obj.isMesh && obj.name && obj.name.toLowerCase() === 'sidepannelleft') {
-          // Remove FridgeColor material if present
           if (obj.material && obj.material.name && obj.material.name.toLowerCase() === 'fridgecolor') {
             obj.material = new THREE.MeshStandardMaterial();
           }
-          // Clone material if not already unique
           if (obj.material && !obj.material._isClonedForSidePanelLeft) {
             obj.material = obj.material.clone();
             obj.material._isClonedForSidePanelLeft = true;
@@ -607,20 +632,19 @@ if (!scene || !threeScene) return;
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const texture = new THREE.Texture(img);
-      texture.encoding = THREE.sRGBEncoding;
+      if ('colorSpace' in texture) texture.colorSpace = THREE.SRGBColorSpace;
+      else texture.encoding = THREE.sRGBEncoding;
       texture.anisotropy = 16;
       texture.flipY = false;
       texture.center.set(0, 0.5);
-        texture.repeat.set(3,0.9);
+      texture.repeat.set(3, 0.9);
       texture.needsUpdate = true;
       let found = false;
       scene.traverse((obj) => {
         if (obj.isMesh && obj.name && obj.name.toLowerCase() === 'sidepannelright') {
-          // Remove FridgeColor material if present
           if (obj.material && obj.material.name && obj.material.name.toLowerCase() === 'fridgecolor') {
             obj.material = new THREE.MeshStandardMaterial();
           }
-          // Clone material if not already unique
           if (obj.material && !obj.material._isClonedForSidePanelRight) {
             obj.material = obj.material.clone();
             obj.material._isClonedForSidePanelRight = true;
