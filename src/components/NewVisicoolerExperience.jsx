@@ -453,18 +453,6 @@ if (!scene || !threeScene) return;
   }, [gl]);
 
 
-  // --- Helper: Set user texture params for consistent mapping ---
-const setUserTextureParams = (t, gl) => {
-    t.encoding = THREE.sRGBEncoding;
-    t.anisotropy = gl.capabilities?.getMaxAnisotropy ? gl.capabilities.getMaxAnisotropy() : 16;
-    t.flipY = false;
-    t.offset.y = 0;
-    t.offset.x=-0.25;
-    t.center.set(0.33, 0.5);
-    t.rotation = Math.PI ;
-    t.repeat.set(2.5,0.9);
-    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
-};
 
   // Apply uploaded texture to Insidestrip1...6 meshes
   useEffect(() => {
@@ -544,9 +532,11 @@ const setUserTextureParams = (t, gl) => {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const texture = new THREE.Texture(img);
-      setUserTextureParams(texture, gl);
-      // Fix vertical inversion for side panel
-     
+      texture.encoding = THREE.sRGBEncoding;
+      texture.anisotropy = 16;
+      texture.flipY = false;
+       texture.center.set(0, 0.5);
+        texture.repeat.set(3,0.9);
       texture.needsUpdate = true;
       let found = false;
       scene.traverse((obj) => {
@@ -601,9 +591,11 @@ const setUserTextureParams = (t, gl) => {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const texture = new THREE.Texture(img);
-      setUserTextureParams(texture, gl);
-      // Fix vertical inversion for side panel
-     
+      texture.encoding = THREE.sRGBEncoding;
+      texture.anisotropy = 16;
+      texture.flipY = false;
+      texture.center.set(0, 0.5);
+        texture.repeat.set(3,0.9);
       texture.needsUpdate = true;
       let found = false;
       scene.traverse((obj) => {
