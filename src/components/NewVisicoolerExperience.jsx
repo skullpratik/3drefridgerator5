@@ -1,6 +1,6 @@
-import React, { Suspense, forwardRef, useRef, useEffect } from 'react';
+import React, { Suspense, forwardRef, useRef, useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
-import { Environment, ContactShadows, OrbitControls, useGLTF } from '@react-three/drei';
+import { Environment, ContactShadows, OrbitControls, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -304,6 +304,8 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
     };
   }, [scene, pepsiTexture]);
 
+  
+
   // Find and store the Point light, and handle Insidestrip glow effect
   const pointLightRef = useRef(null);
   useEffect(() => {
@@ -337,6 +339,8 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
       }
     });
   }, [scene, ledOn]);
+
+  // Presets are handled by the Interface component (UI) — no in-scene preset UI here.
 
   // expose API
   useEffect(() => {
@@ -653,6 +657,7 @@ if (!scene || !threeScene) return;
         <ContactShadows position={[0, -1.66, 0]} opacity={0.9} scale={15} far={25} resolution={512} />
         <OrbitControls enableDamping dampingFactor={0.12} rotateSpeed={1.1} zoomSpeed={1.0} panSpeed={0.8} enablePan minDistance={0} maxDistance={20} minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.05} target={[0, 0.5, 0]} makeDefault />
         {scene && <primitive object={scene} />}
+        {/* Preset UI removed from scene; use the separate interface panel */}
       </Suspense>
     </>
   );

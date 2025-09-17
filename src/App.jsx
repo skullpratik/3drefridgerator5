@@ -145,7 +145,7 @@ function CanvasContent({
         />
       )}
       {modelType === "newvisicooler" && (
-        <NewVisicoolerExperience
+          <NewVisicoolerExperience
           key="newvisicooler"
           ref={newVisiRef}
           glowColor={newVisiGlowColor}

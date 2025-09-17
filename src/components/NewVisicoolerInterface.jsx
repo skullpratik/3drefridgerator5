@@ -80,6 +80,25 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
         <FormControlLabel control={<Switch size="small" checked={ledOn} onChange={e => onLEDToggle?.(e.target.checked)} />} label={<Typography sx={{ fontSize: '0.8rem' }}>LED</Typography>} />
       </Box>
       <Box sx={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { background: '#f1f1f1' }, '&::-webkit-scrollbar-thumb': { background: '#c1c1c1', borderRadius: '4px' }, '&::-webkit-scrollbar-thumb:hover': { background: '#a1a1a1' } }}>
+        {/* Preset Buttons (Pepsi / CocaCola) */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          <Button variant="contained" onClick={() => {
+            // Pepsi preset
+            if (onPepsiTextureUpload) onPepsiTextureUpload('/texture/pepsilogo.jpg');
+            if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload('/texture/pepsisidepannel.jpg');
+            if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload('/texture/pepsisidepannel.jpg');
+            if (onFridgeColorChange) onFridgeColorChange('#031654');
+            if (onHandleColorChange) onHandleColorChange('#cccccc');
+          }}>Pepsi Look</Button>
+          <Button variant="outlined" onClick={() => {
+            // CocaCola preset
+            if (onPepsiTextureUpload) onPepsiTextureUpload('/texture/DF.jpg');
+            if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload('/texture/cocacolaside2.jpg');
+            if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload('/texture/cocacolaside2.jpg');
+            if (onFridgeColorChange) onFridgeColorChange('#ef1b24');
+            if (onHandleColorChange) onHandleColorChange('#ffffff');
+          }}>CocaCola Look</Button>
+        </Box>
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}><ImageIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} /> Image Customization</Typography>
           <Grid container spacing={1}>
