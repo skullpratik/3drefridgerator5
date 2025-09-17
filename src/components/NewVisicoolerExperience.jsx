@@ -263,32 +263,45 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
 
     if (targets.length === 0) return;
 
-    // create a GSAP timeline that 'blinks' the logo:
-    // quick ramp-up -> short hold -> quick ramp-down -> 2s pause -> repeat
-    const timelines = [];
-    targets.forEach((mesh) => {
+    // If there's no pepsiTexture, ensure logo is not glowing and exit early
+    if (!pepsiTexture) {
+      targets.forEach((mesh) => {
+        const m = mesh.material;
+        if (m) {
+          m.emissiveIntensity = 0;
+          m.emissive = new THREE.Color(0x000000);
+          m.emissiveMap = null;
+          m.side = THREE.FrontSide;
+          m.needsUpdate = true;
+        }
+      });
+      return;
+    }
+
+    // create timelines that: ramp up -> ramp down -> hold zero for 1.5s, then repeat
+    const tls = [];
+    targets.forEach((mesh, idx) => {
       const mat = mesh.material;
       if (!mat) return;
-      if (typeof mat.emissiveIntensity !== 'number') mat.emissiveIntensity = 0;
+      const maxIntensity = Math.max(typeof mat.emissiveIntensity === 'number' ? mat.emissiveIntensity : 1.5, 1.5);
+      if (!mat.emissive) mat.emissive = new THREE.Color(0xffffff);
+      mat.emissiveIntensity = 0;
+      mat.needsUpdate = true;
 
-      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0 });
-      // initial ensure off
-      tl.set(mat, { emissiveIntensity: 0 });
-      // blink on quickly (120ms)
-      tl.to(mat, { emissiveIntensity: Math.max(mat.emissiveIntensity || 2.5, 2.5), duration: 0.12, ease: 'power2.out', onUpdate: () => mat && (mat.needsUpdate = true) });
-      // hold briefly (100ms)
-      tl.to(mat, { emissiveIntensity: Math.max(mat.emissiveIntensity || 2.5, 2.5), duration: 0.1, onUpdate: () => mat && (mat.needsUpdate = true) });
-      // blink off quickly (120ms)
-      tl.to(mat, { emissiveIntensity: 0, duration: 0.12, ease: 'power2.in', onUpdate: () => mat && (mat.needsUpdate = true) });
-      // wait 2s before next blink
-      tl.to({}, { duration: 2.0 });
+      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0, delay: idx * 0.18 });
+      // ramp up smoothly
+      tl.to(mat, { emissiveIntensity: maxIntensity, duration: 0.9, ease: 'sine.inOut', onUpdate: () => mat && (mat.needsUpdate = true) });
+      // ramp back down smoothly
+      tl.to(mat, { emissiveIntensity: 0, duration: 0.9, ease: 'sine.inOut', onUpdate: () => mat && (mat.needsUpdate = true) });
+      // hold at zero for 1.5s
+      tl.to({}, { duration: 1.5 });
 
-      timelines.push(tl);
+      tls.push(tl);
     });
 
     // cleanup
     return () => {
-      timelines.forEach(t => t.kill && t.kill());
+      tls.forEach(t => t.kill && t.kill());
       targets.forEach((mesh) => {
         const mat = mesh.material;
         if (mat) {
