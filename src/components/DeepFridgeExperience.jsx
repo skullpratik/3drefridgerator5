@@ -82,7 +82,8 @@ export const Experience = forwardRef(function DeepFridgeExperience(
   // Initial setup
   useEffect(() => {
     if (!scene || !threeScene) return;
-    threeScene.background = null;
+    // Use a subtle neutral backdrop for product shots
+    threeScene.background = new THREE.Color(0x22272b);
     scene.scale.set(2.5, 2.5, 2.5);
     scene.position.set(0.2, -1.16, 0);
 
@@ -93,6 +94,75 @@ export const Experience = forwardRef(function DeepFridgeExperience(
         originalMaterials.current[obj.name] = obj.material.clone();
       }
     });
+
+    // Configure renderer for cinematic product rendering
+    if (gl) {
+      try { gl.toneMapping = THREE.ACESFilmicToneMapping; } catch (e) {}
+      if (gl.toneMappingExposure !== undefined) gl.toneMappingExposure = 1.0;
+      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      gl.shadowMap.enabled = true;
+      gl.shadowMap.type = THREE.PCFSoftShadowMap;
+      gl.physicallyCorrectLights = true;
+      if (gl.outputColorSpace !== undefined) {
+        gl.outputColorSpace = THREE.SRGBColorSpace;
+      }
+      try { gl.setClearColor(new THREE.Color(0x22272b), 1); } catch (e) {}
+    }
+
+    // Add studio-style lights if scene looks underlit
+    const existingLights = [];
+    threeScene.traverse((o) => { if (o.isLight) existingLights.push(o); });
+    if (existingLights.length < 3) {
+      const ambient = new THREE.AmbientLight(0xffffff, 0.15);
+      threeScene.add(ambient);
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x222222, 0.25);
+      threeScene.add(hemi);
+
+      const rim = new THREE.DirectionalLight(0xe6f3ff, 0.18);
+      rim.position.set(-2.5, 3.2, -2.5);
+      rim.castShadow = false;
+      threeScene.add(rim);
+
+      const key = new THREE.SpotLight(0xfff6e8, 0.9);
+      key.position.set(2.2, 4.0, 2.0);
+      key.angle = Math.PI / 7;
+      key.penumbra = 0.4;
+      key.castShadow = true;
+      key.shadow.bias = -0.0005;
+      key.shadow.radius = 2;
+      key.target.position.set(0, 0.5, 0);
+      threeScene.add(key);
+      threeScene.add(key.target);
+    }
+
+    // Polish materials: gentle roughness/metalness and add PMREM envMap for balanced reflections
+    try {
+      const hdrPath = "photo_studio_01_1k.hdr";
+      const texLoader = new THREE.TextureLoader();
+      texLoader.load(hdrPath, (hdrTex) => {
+        hdrTex.mapping = THREE.EquirectangularReflectionMapping;
+        const pmremGen = new THREE.PMREMGenerator(gl);
+        const envMap = pmremGen.fromEquirectangular(hdrTex).texture;
+
+        scene.traverse((obj) => {
+          if (obj.isMesh && obj.material && obj.material.type === 'MeshStandardMaterial') {
+            if (obj.material.roughness === undefined || obj.material.roughness < 0.25) obj.material.roughness = 0.25;
+            if (obj.material.metalness === undefined) obj.material.metalness = 0.08;
+            if (!obj.material.envMap) {
+              obj.material.envMap = envMap;
+              obj.material.envMapIntensity = 0.5;
+            }
+            obj.material.needsUpdate = true;
+          }
+        });
+
+        hdrTex.dispose();
+        pmremGen.dispose();
+      });
+    } catch (err) {
+      console.warn('PMREM environment mapping failed for DeepFridge:', err.message);
+    }
 
     if (onAssetLoaded) onAssetLoaded();
   }, [scene, threeScene, onAssetLoaded]);

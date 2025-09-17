@@ -263,36 +263,35 @@ export const Experience = forwardRef(({ lighting = 'photo_studio_01_1k.hdr', pos
 
     if (targets.length === 0) return;
 
-    // create GSAP tweens for each material's emissiveIntensity
-    const tweens = [];
+    // create a GSAP timeline that 'blinks' the logo:
+    // quick ramp-up -> short hold -> quick ramp-down -> 2s pause -> repeat
+    const timelines = [];
     targets.forEach((mesh) => {
       const mat = mesh.material;
       if (!mat) return;
-
-      // ensure starting emissiveIntensity is defined
       if (typeof mat.emissiveIntensity !== 'number') mat.emissiveIntensity = 0;
 
-      const tween = gsap.to(mat, {
-        emissiveIntensity: mat.emissiveIntensity > 0 ? Math.max(mat.emissiveIntensity, 2) : 2.5,
-        duration: 1.2,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-        onUpdate: () => {
-          // ensure the material updates in r3f
-          if (mat) mat.needsUpdate = true;
-        }
-      });
-      tweens.push(tween);
+      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0 });
+      // initial ensure off
+      tl.set(mat, { emissiveIntensity: 0 });
+      // blink on quickly (120ms)
+      tl.to(mat, { emissiveIntensity: Math.max(mat.emissiveIntensity || 2.5, 2.5), duration: 0.12, ease: 'power2.out', onUpdate: () => mat && (mat.needsUpdate = true) });
+      // hold briefly (100ms)
+      tl.to(mat, { emissiveIntensity: Math.max(mat.emissiveIntensity || 2.5, 2.5), duration: 0.1, onUpdate: () => mat && (mat.needsUpdate = true) });
+      // blink off quickly (120ms)
+      tl.to(mat, { emissiveIntensity: 0, duration: 0.12, ease: 'power2.in', onUpdate: () => mat && (mat.needsUpdate = true) });
+      // wait 2s before next blink
+      tl.to({}, { duration: 2.0 });
+
+      timelines.push(tl);
     });
 
-    // If pepsiTexture is removed, or on cleanup, kill tweens and reset emissiveIntensity
+    // cleanup
     return () => {
-      tweens.forEach(t => t.kill && t.kill());
+      timelines.forEach(t => t.kill && t.kill());
       targets.forEach((mesh) => {
         const mat = mesh.material;
         if (mat) {
-          // reset to baseline if no pepsiTexture
           if (!pepsiTexture) {
             mat.emissiveIntensity = 0;
             mat.emissive = new THREE.Color(0x000000);
