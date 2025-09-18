@@ -53,8 +53,13 @@ export const Experience = forwardRef(function DeepFridgeExperience(
         tex.generateMipmaps = true;
         tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.center && tex.center.set(0.5, 0.5);
+        tex.offset && tex.offset.set(0, 0);
+        tex.repeat && tex.repeat.set(1, 1);
         tex.anisotropy = gl.capabilities?.getMaxAnisotropy ? gl.capabilities.getMaxAnisotropy() : (gl.capabilities?.maxAnisotropy || 16);
         tex.needsUpdate = true;
+
 
         // Clone the original material to preserve other properties
         const newMaterial = (mesh.material && mesh.material.clone) ? mesh.material.clone() : new THREE.MeshStandardMaterial();
@@ -62,9 +67,24 @@ export const Experience = forwardRef(function DeepFridgeExperience(
         // Ensure the material base color is neutral so the texture appears accurate
         try { if (newMaterial.color) newMaterial.color.set(0xffffff); } catch (e) {}
 
-        // Conservative PBR defaults to avoid washed-out or overly reflective appearance
-        if (typeof newMaterial.roughness === 'undefined' || newMaterial.roughness < 0.15) newMaterial.roughness = 0.6;
-        if (typeof newMaterial.metalness === 'undefined') newMaterial.metalness = 0.0;
+        // Normalize PBR defaults to produce consistent look across panels
+        newMaterial.roughness = 0.6;
+        newMaterial.metalness = 0.0;
+        newMaterial.side = THREE.DoubleSide;
+        // No emissive by default for panels
+        try { newMaterial.emissive = new THREE.Color(0x000000); } catch (e) {}
+        newMaterial.emissiveIntensity = 0;
+        // Reasonable env map intensity if environment exists
+        if (typeof newMaterial.envMapIntensity !== 'undefined') newMaterial.envMapIntensity = 1.0;
+
+        // Slightly brighten the right panel to match front/left (fix darker appearance reported)
+        try {
+          const lowerName = (mesh.name || '').toLowerCase();
+          if (lowerName === 'sidepannelright' || lowerName === 'sidepannelrightmesh' || lowerName.includes('right')) {
+            // multiply base color slightly to compensate for darker lighting/UVs
+            if (newMaterial.color) newMaterial.color.multiplyScalar(1.06);
+          }
+        } catch (e) {}
 
         newMaterial.needsUpdate = true;
 
