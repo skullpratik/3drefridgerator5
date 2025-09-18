@@ -502,45 +502,87 @@ export const Experience = forwardRef(({
   // Apply uploaded texture to Insidestrip1...6 meshes
   useEffect(() => {
     if (!scene) return;
+
+    // Track the texture we create so we can dispose it on cleanup
+    let createdTexture = null;
+    let cancelled = false;
+
     if (!insideStripTexture) {
-      // Remove texture from InsideStrip meshes, do not restore any material
+      // Restore original materials for InsideStrip meshes and remove any emissive usage
       scene.traverse((obj) => {
         if (obj.isMesh && obj.name) {
           const lower = obj.name.toLowerCase();
           for (let i = 1; i <= 6; i++) {
-            if (lower === `insidestrip${i}` && obj.material) {
-              if (obj.material.map && obj.material.map.dispose) {
-                obj.material.map.dispose();
+            if (lower === `insidestrip${i}`) {
+              // Dispose current maps if present
+              try {
+                if (obj.material) {
+                  if (obj.material.map && obj.material.map.dispose) obj.material.map.dispose();
+                  if (obj.material.emissiveMap && obj.material.emissiveMap.dispose) obj.material.emissiveMap.dispose();
+                }
+              } catch (e) {
+                // ignore
               }
-              obj.material.map = null;
+
+              // Restore saved original material if we stored one earlier
+              if (obj.userData && obj.userData.originalMaterial) {
+                try {
+                  obj.material = obj.userData.originalMaterial.clone ? obj.userData.originalMaterial.clone() : obj.userData.originalMaterial;
+                } catch (e) {
+                  obj.material = obj.userData.originalMaterial;
+                }
+              } else {
+                // fallback: reset to a neutral material
+                obj.material = new THREE.MeshStandardMaterial();
+              }
+
+              // ensure no emissive left
+              if (obj.material.emissive) obj.material.emissive.set(0x000000);
+              obj.material.emissiveMap = null;
+              obj.material.emissiveIntensity = 0;
               obj.material.needsUpdate = true;
             }
           }
         }
       });
-      return;
+
+      return () => {
+        // nothing further
+      };
     }
+
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      if (cancelled) return;
       const texture = new THREE.Texture(img);
+      createdTexture = texture;
       // Restore original mapping for InsideStrip (no setUserTextureParams)
       if ('colorSpace' in texture) texture.colorSpace = THREE.SRGBColorSpace;
       else texture.encoding = THREE.sRGBEncoding;
       texture.flipY = false;
       texture.needsUpdate = true;
+
       let found = false;
       scene.traverse((obj) => {
         if (obj.isMesh && obj.name) {
           const lower = obj.name.toLowerCase();
           for (let i = 1; i <= 6; i++) {
             if (lower === `insidestrip${i}`) {
-              if (!obj.material) {
-                obj.material = new THREE.MeshStandardMaterial();
+              // store original material if not already saved
+              if (!obj.userData) obj.userData = {};
+              if (!obj.userData.originalMaterial && obj.material) {
+                try {
+                  obj.userData.originalMaterial = obj.material.clone ? obj.material.clone() : obj.material;
+                } catch (e) {
+                  obj.userData.originalMaterial = obj.material;
+                }
               }
-              if (obj.material.map && obj.material.map.dispose) {
-                obj.material.map.dispose();
-              }
+
+              if (!obj.material) obj.material = new THREE.MeshStandardMaterial();
+              // dispose previous map if any
+              if (obj.material.map && obj.material.map.dispose) obj.material.map.dispose();
+
               obj.material.map = texture;
               obj.material.needsUpdate = true;
               if (obj.material.map) obj.material.map.needsUpdate = true;
@@ -557,6 +599,16 @@ export const Experience = forwardRef(({
       console.error('❌ Failed to load InsideStrip image', err);
     };
     img.src = insideStripTexture;
+
+    return () => {
+      cancelled = true;
+      // dispose created texture if still present
+      try {
+        if (createdTexture && createdTexture.dispose) createdTexture.dispose();
+      } catch (e) {
+        // ignore
+      }
+    };
   }, [scene, insideStripTexture, gl]);
 
   // --- SidepannelLeft Texture Update ---
