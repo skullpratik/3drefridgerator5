@@ -460,7 +460,7 @@ export default function App() {
     topPanelColor: "#da291c",
     louverColor: "#da291c",
     canopyTexture: "/texture/cococolacanopy.jpg",
-    sidePanelTexture: "/texture/cocacolaside2.jpg",
+    sidePanelTexture: "/texture/cocacolaside1.jpg",
   };
 
   const applyPreset = (preset) => {
