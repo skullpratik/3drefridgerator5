@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -49,7 +49,7 @@ const ColorButton = styled(Button)(({ theme, backgroundcolor }) => ({
   }
 }));
 
-export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fridgeColor, onFridgeColorChange, handleColor, onHandleColorChange, onInsideStripTextureUpload, onSidePanelLeftTextureUpload, onSidePanelRightTextureUpload, onPepsiTextureUpload, pepsiTexture }) => {
+export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fridgeColor, onFridgeColorChange, handleColor, onHandleColorChange, onInsideStripTextureUpload, onSidePanelLeftTextureUpload, onSidePanelRightTextureUpload, onPepsiTextureUpload, pepsiTexture, insideStripTexture, sidePanelLeftTexture, sidePanelRightTexture }) => {
   // Color pickers
   const [colorPickerOpen, setColorPickerOpen] = useState({ glow: false, fridge: false, handle: false });
   const [colorPickerAnchor, setColorPickerAnchor] = useState({ glow: null, fridge: null, handle: null });
@@ -60,6 +60,23 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
   const [pendingSidePanelRight, setPendingSidePanelRight] = useState(null);
   const [pendingPepsi, setPendingPepsi] = useState(null);
   const [logoUploadError, setLogoUploadError] = useState(null);
+
+  // Sync preview state from external props so previews persist when switching views
+  useEffect(() => {
+    setPendingImage(insideStripTexture || null);
+  }, [insideStripTexture]);
+
+  useEffect(() => {
+    setPendingSidePanelLeft(sidePanelLeftTexture || null);
+  }, [sidePanelLeftTexture]);
+
+  useEffect(() => {
+    setPendingSidePanelRight(sidePanelRightTexture || null);
+  }, [sidePanelRightTexture]);
+
+  useEffect(() => {
+    setPendingPepsi(pepsiTexture || null);
+  }, [pepsiTexture]);
 
   // Handlers for color pickers
   const handleColorPickerOpen = (type, event) => {
@@ -89,8 +106,10 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
               if (onPepsiTextureUpload) onPepsiTextureUpload('/texture/pepsilogo.jpg');
               if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload('/texture/pepsisidepannel.jpg');
               if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload('/texture/pepsisidepannel.jpg');
+              // Also set the inside strip image for Pepsi preset
+              if (onInsideStripTextureUpload) onInsideStripTextureUpload('/texture/pepsistrip.jpg');
               if (onFridgeColorChange) onFridgeColorChange('#031654');
-              if (onHandleColorChange) onHandleColorChange('#cccccc');
+              if (onHandleColorChange) onHandleColorChange('#031654');
             }
             }
             sx={{
@@ -107,10 +126,12 @@ export const Interface = ({ onLEDToggle, ledOn, glowColor, onGlowColorChange, fr
             onClick={() => {
               // CocaCola preset
               if (onPepsiTextureUpload) onPepsiTextureUpload('/texture/DF.jpg');
-              if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload('/texture/cocacolaside2.jpg');
-              if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload('/texture/cocacolaside2.jpg');
+              if (onSidePanelLeftTextureUpload) onSidePanelLeftTextureUpload('/texture/cocacolaside1.jpg');
+              if (onSidePanelRightTextureUpload) onSidePanelRightTextureUpload('/texture/cocacolaside1.jpg');
+              // Also set the inside strip image for Coca-Cola preset
+              if (onInsideStripTextureUpload) onInsideStripTextureUpload('/texture/cokestrip.jpg');
               if (onFridgeColorChange) onFridgeColorChange('#ef1b24');
-              if (onHandleColorChange) onHandleColorChange('#ffffff');
+              if (onHandleColorChange) onHandleColorChange('#ef1b24');
             }
             }
             sx={{

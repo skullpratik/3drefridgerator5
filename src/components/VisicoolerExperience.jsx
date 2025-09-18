@@ -17,6 +17,10 @@ export const Experience = forwardRef(({
   ledVisible,
   louverColor,
   colorShading,
+  canopyTextureUrl,
+  sidePanel1TextureUrl,
+  sidePanel2TextureUrl,
+  louverTextureUrl,
   onAssetLoaded
 }, ref) => {
   const { scene: threeScene, camera, gl } = useThree();
@@ -479,6 +483,41 @@ export const Experience = forwardRef(({
     }
     applyLouverMaterial();
   };
+  
+  // --- Sync props -> textures: reapply when App-level URLs change (fixes lost textures on remount)
+  useEffect(() => {
+    if (!canopyTextureUrl) {
+      // If no url, reset to original
+      resetCanopyTexture();
+      return;
+    }
+    // Apply canopy texture from prop
+    applyCanopyTexture(canopyTextureUrl);
+  }, [canopyTextureUrl]);
+
+  useEffect(() => {
+    if (!sidePanel1TextureUrl) {
+      resetSidePanel1Texture();
+      return;
+    }
+    applySidePanel1Texture(sidePanel1TextureUrl);
+  }, [sidePanel1TextureUrl]);
+
+  useEffect(() => {
+    if (!sidePanel2TextureUrl) {
+      resetSidePanel2Texture();
+      return;
+    }
+    applySidePanel2Texture(sidePanel2TextureUrl);
+  }, [sidePanel2TextureUrl]);
+
+  useEffect(() => {
+    if (!louverTextureUrl) {
+      resetLouverTexture();
+      return;
+    }
+    applyLouverTexture(louverTextureUrl);
+  }, [louverTextureUrl]);
   
   // --- New function to adjust canopy texture ---
   const adjustCanopyTexture = ({ offsetX = 0, offsetY = 0, repeatX = 1, repeatY = 1, rotation = 0 }) => {

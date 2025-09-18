@@ -348,8 +348,8 @@ export default function App() {
   const [insideStripTexture, setInsideStripTexture] = useState(null);
   const [pepsiTexture, setPepsiTexture] = useState(null);
   const [canopyColor, setCanopyColor] = useState(null);
-  const [fridgeColor, setFridgeColor] = useState('#3407f9'); // Default blue
-  const [handleColor, setHandleColor] = useState('#655f5fff');
+  const [fridgeColor, setFridgeColor] = useState('#dbdbdb'); // Default blue
+  const [handleColor, setHandleColor] = useState('#655f5f');
   const [sidePanelLeftTexture, setSidePanelLeftTexture] = useState(null);
   const [sidePanelRightTexture, setSidePanelRightTexture] = useState(null);
   const [bottomBorderColor, setBottomBorderColor] = useState(null);
@@ -451,7 +451,6 @@ export default function App() {
     louverColor: "#000000",
     canopyTexture: "/texture/pepsicanopy.jpg",
     sidePanelTexture: "/texture/pepsisidepannel.jpg",
-    louverTexture: "/images/pepsi-louver.png",
   };
 
   const cokePreset = {
@@ -462,7 +461,6 @@ export default function App() {
     louverColor: "#da291c",
     canopyTexture: "/texture/cococolacanopy.jpg",
     sidePanelTexture: "/texture/cocacolaside2.jpg",
-    louverTexture: "/images/coke-louver.png",
   };
 
   const applyPreset = (preset) => {
@@ -476,13 +474,12 @@ export default function App() {
       visiCoolerRef.current.applyCanopyTexture(preset.canopyTexture);
       visiCoolerRef.current.applySidePanel1Texture(preset.sidePanelTexture);
       visiCoolerRef.current.applySidePanel2Texture(preset.sidePanelTexture);
-      visiCoolerRef.current.applyLouverTexture(preset.louverTexture);
     }
 
     setCanopyTextureUrl(preset.canopyTexture);
     setSidePanel1TextureUrl(preset.sidePanelTexture);
     setSidePanel2TextureUrl(preset.sidePanelTexture);
-    setLouverTextureUrl(preset.louverTexture);
+    // do not set louver image for presets; presets only set louver color
   };
 
   return (
@@ -633,6 +630,9 @@ export default function App() {
                   onSidePanelRightTextureUpload={dataUrl => setSidePanelRightTexture(dataUrl)}
                   onPepsiTextureUpload={dataUrl => setPepsiTexture(dataUrl)}
                   pepsiTexture={pepsiTexture}
+                  insideStripTexture={insideStripTexture}
+                  sidePanelLeftTexture={sidePanelLeftTexture}
+                  sidePanelRightTexture={sidePanelRightTexture}
                 />
               )}
               {modelType === "deepfridge" && (

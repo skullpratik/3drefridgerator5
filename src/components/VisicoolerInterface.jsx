@@ -125,6 +125,14 @@ export function Interface({
   useEffect(() => { setSidePanel2Image(sidePanel2TextureUrl); }, [sidePanel2TextureUrl]);
   useEffect(() => { setLouverImage(louverTextureUrl); if (louverTextureUrl) { setLouverMode("image"); } }, [louverTextureUrl]);
 
+	// Combined sync: ensure all preview images reflect the current props (handles switching views)
+	useEffect(() => {
+		setCanopyImage(canopyTextureUrl || null);
+		setSidePanel1Image(sidePanel1TextureUrl || null);
+		setSidePanel2Image(sidePanel2TextureUrl || null);
+		setLouverImage(louverTextureUrl || null);
+	}, [canopyTextureUrl, sidePanel1TextureUrl, sidePanel2TextureUrl, louverTextureUrl]);
+
   const handleARRedirect = () => {
     window.location.href = `AR.html?model=visicooler`;
   };

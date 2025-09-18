@@ -4,7 +4,7 @@ import { Environment, ContactShadows, OrbitControls, useGLTF, Html } from '@reac
 import * as THREE from 'three';
 import gsap from 'gsap';
 
-useGLTF.preload('/models/NewVisicooler2.glb');
+useGLTF.preload('/models/NewVisicooler3.glb');
 
 export const Experience = forwardRef(({
   lighting = 'photo_studio_01_1k.hdr',
@@ -22,7 +22,7 @@ export const Experience = forwardRef(({
   debugUV = false
 }, ref) => {
   const { scene: threeScene, camera, gl } = useThree();
-  const { scene: originalScene } = useGLTF('/models/NewVisicooler2.glb');
+  const { scene: originalScene } = useGLTF('/models/NewVisicooler3.glb');
   // clone to avoid reuse issues
   const [scene] = React.useState(() => originalScene ? originalScene.clone(true) : null);
 
@@ -179,7 +179,7 @@ export const Experience = forwardRef(({
     const isCylinder001 = (name) => {
       if (!name) return false;
       const lower = name.toLowerCase();
-      return lower === 'cylinder001' || lower === 'cylinder.001';
+      return lower === 'cylinder002' || lower === 'cylinder.002';
     };
 
     // Track created texture(s) so we can dispose on cleanup
