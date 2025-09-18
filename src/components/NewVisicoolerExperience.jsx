@@ -282,7 +282,7 @@ export const Experience = forwardRef(({
     door.traverse((child) => {
       if (child.isMesh && child.name) {
         const lower = child.name.toLowerCase();
-        if (lower === 'cylinder001' || lower === 'cylinder.001') {
+        if (lower === 'cylinder002' || lower === 'cylinder.002') {
           targets.push(child);
         }
       }
